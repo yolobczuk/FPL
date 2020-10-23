@@ -4,6 +4,7 @@ import numpy as np
 import sqlite3
 import seaborn as sns
 import matplotlib.pyplot as plt
+import openpyxl
 
 sns.set()
 
@@ -123,7 +124,7 @@ def init_pilkarzyki(GW):
     el_df['team'] = el_df.team.map(teams_df.set_index('id').name)
 
     el_df['gw'] = GW
-    el_df['xPTS'] = elements_df['ep_next']
+    el_df['xPTS'] = elements_df['ep_this']
 
     el_df.to_sql('pilkarzyki', con=con, if_exists='append', index=False)
     chk = pd.read_sql("SELECT * FROM pilkarzyki", con)
@@ -534,7 +535,7 @@ def show_means():
     mu['sr']=mu['suma']/mu['ile']
     mu = mu[['element','sr']]
     mu = mu.sort_values(by='sr', ascending = False)
-    with pd.option_context('display.max_rows', 20, 'display.max_columns', None):
+    with pd.option_context('display.max_rows', None, 'display.max_columns', None):
         print(mu)
         
     count = pd.read_sql("SELECT team, count(*) as ile FROM picked GROUP BY team ORDER BY ile desc", con)
@@ -559,84 +560,84 @@ OK = True
 
 while OK:
     print("MAIN MENU")
-    print("1. Zainicjalizuj graczy")
-    print("2. Zainicjalizuj pilkarzykow")
-    print("3. Zainicjalizuj bazy danych")
-    print("4. Zaktualizuj wybory")
-    print("5. Wyswietl statysyki")
-    print("6. Wyswietl baze danych pilkarzy")
-    print("7. Wyszukaj pilkarza")
-    print("8. Nadpisz pilkarzy")
-    print("9. Wyswietl bazy danych wyborow")
-    print("10. Wyswietl ilosc picknietych zawodnikow")
-    print("11. Wyswietl kapitanow")
-    print("12. Wyswietl transfery")
-    print("13. Wyswietl tymczasowa klasyfikacje (po GW)")
-    print("14. Eksportuj picki do csv")
-    print("15. Wyswietl ilosc picknietych zawodnikow w sezonie")
-    print("16. Eksportuj kapitanow do csv")
-    print("17. Wyswietl predykcje")
-    print("18. Wyswietl wykresy")
-    print("19. Wyswietl srednie")
-    print("0. Wyjscie")
-    wybor = input("Wybierz opcje: ")
+    print("1. Update managers")
+    print("2. Initialise players")
+    print("3. Initialise databases")
+    print("4. Initialise picks")
+    print("5. Show all-season statistics")
+    print("6. Show players database")
+    print("7. Search for a player")
+    print("8. Overwrite players")
+    print("9. Show picks database")
+    print("10. Show GW count of picked players")
+    print("11. Show captains")
+    print("12. Show transfers")
+    print("13. Show GW statistics")
+    print("14. Export picks to CSV file")
+    print("15. Show all-season count of picked players")
+    print("16. Export captains to CSV file")
+    print("17. Show predictions")
+    print("18. Show plots")
+    print("19. Show point means")
+    print("0. Exit")
+    wybor = input("Pick a number: ")
     if wybor == '1':
         pok = True
         while pok:
-            potw = input("Ta funkcja nadpisuje graczy w bazie danych. Na pewno chcesz to zrobic? Y/N ")
+            potw = input("This function overwrites manager info in database. Do you want to continue? Y/N ")
             if potw == "Y":
                 init_gracze()
                 pok = False
             elif potw == "N":
-                print("Baza nie zostala zaaktualizowana")
+                print("Database not updated")
                 pok = False
             else:
                 print("Y/N")
     elif wybor == '2':
         pok = True
-        GW = input("Podaj GW: ")
+        GW = input("Pick GW: ")
         while pok:
-            potw = input("Ta funkcja dodaje pilkarzy i ich dane do bazy danych. Na pewno chcesz to zrobic? Y/N ")
+            potw = input("This function overwrites players info in database. Do you want to continue? Y/N ")
             if potw == "Y":
                 init_pilkarzyki(GW)
                 pok = False
             elif potw == "N":
-                print("Baza nie zostala zaaktualizowana")
+                print("Database not updated")
                 pok = False
             else:
                 print("Y/N")
     elif wybor == '3':
         pok = True
         while pok:
-            potw = input("Ta funkcja nadpisuje bazy danych. Na pewno chcesz to zrobic? Y/N ")
+            potw = input("This function overwrites databases. Do you want to continue? Y/N (NOT RECOMMENDED)")
             if potw == "Y":
                 init_db()
                 pok = False
             elif potw == "N":
-                print("Baza nie zostala zaaktualizowana")
+                print("Databeses not updated")
                 pok = False
             else:
                 print("Y/N")
     elif wybor == '4':
-        GW = input("Podaj GW: ")
+        GW = input("Pick GW: ")
         init_picks(GW)
 
     elif wybor == '5':
         init_stat()
 
     elif wybor == '6':
-        GW = input("Podaj GW: ")
+        GW = input("Pick GW: ")
         show_pilkarzyki(GW)
 
     elif wybor == '7':
-        GW = input("Podaj GW: ")
+        GW = input("Pick GW: ")
         all_picks_df = pd.read_sql("SELECT element, name FROM all_picks WHERE gw = " + str(GW), con)
-        szuk = input("KOGO SZUKASZ? ")
+        szuk = input("WHO ARE YOU LOOKING FOR? ")
         with pd.option_context('display.max_rows', None, 'display.max_columns', None):
             print(all_picks_df[(all_picks_df['element'] == str(szuk))])
 
     elif wybor == '8':
-        GW = input("Podaj GW: ")
+        GW = input("Pick GW: ")
         overwrite_pilkarzyki(GW)
         show_pilkarzyki(GW)
 
@@ -644,28 +645,28 @@ while OK:
         show_picks()
 
     elif wybor == '10':
-        GW = input("Podaj GW: ")
+        GW = input("Pick GW: ")
         picks_df = pd.read_sql("SELECT * FROM picked WHERE gw = " + str(GW), con)
         with pd.option_context('display.max_rows', None, 'display.max_columns', None):
             print(picks_df['element'].value_counts())
 
     elif wybor == '11':
-        GW = input("Podaj GW: ")
+        GW = input("Pick GW: ")
         cap_df = pd.read_sql("SELECT element, name FROM captains WHERE gw = " + str(GW), con)
         with pd.option_context('display.max_rows', None, 'display.max_columns', None):
             print(cap_df)
 
     elif wybor == '12':
-        GW = input("Podaj GW: ")
+        GW = input("Pick GW: ")
         init_transfers(GW)
 
     elif wybor == '13':
-        GW = input("Podaj GW: ")
+        GW = input("Pick GW: ")
         init_gw_stat(GW)
 
     elif wybor == '14':
         wr = pd.read_sql("SELECT * FROM picked", con)
-        save = input("Zapisac do csv? Y/N ")
+        save = input("Save to CSV file? Y/N ")
         ok = True
         while ok:
             if save == 'Y':
@@ -686,7 +687,7 @@ while OK:
             
     elif wybor == '16':
         wr = pd.read_sql("SELECT * FROM captains", con)
-        save = input("Zapisac do csv? Y/N ")
+        save = input("Save to CSV file? Y/N ")
         ok = True
         while ok:
             if save == 'Y':
@@ -698,11 +699,11 @@ while OK:
                 print("Y/N")
     
     elif wybor == '17':
-        GW = int(input("Podaj GW: "))
+        GW = int(input("Pick GW: "))
         init_pred(GW)
 
     elif wybor == '18':
-        GW = int(input("Podaj GW: "))
+        GW = int(input("Pick GW: "))
         show_plots(GW)   
 
     elif wybor == '19':
@@ -716,7 +717,7 @@ while OK:
         #con.commit()
 
     elif wybor == '0':
-        print("WYJSCIE")
+        print("EXIT")
         OK = False
     else:
-        print("Zla opcja")
+        print("Wrong number")
