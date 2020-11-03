@@ -4,10 +4,6 @@ import numpy as np
 import sqlite3
 import seaborn as sns
 import matplotlib.pyplot as plt
-<<<<<<< HEAD
-=======
-import openpyxl
->>>>>>> 57f8577f88be8c855f92e3a098767a5e0e49ab15
 
 sns.set()
 
