@@ -4,7 +4,7 @@ import numpy as np
 import sqlite3
 import seaborn as sns
 import matplotlib.pyplot as plt
-import openpyxl
+
 
 sns.set()
 
@@ -377,6 +377,7 @@ def init_stat():
     stat = pd.merge(left=stat, right=tablet, left_on=['name', 'team_name'], right_on=['name', 'team_name'])
     stat = stat.rename(columns={'transfers': 'Transfers'})
     stat['All']=stat['All']-stat['Transfers']
+    stat=stat.sort_values(by = 'All', ascending = False)
     stat = pd.merge(left=stat, right=abs(stat['All'].diff()), left_on=['name', 'team_name'],
                     right_on=['name', 'team_name'])
     stat = stat.rename(columns={'All_y': 'Next'})
@@ -392,7 +393,6 @@ def init_stat():
     stat = stat.rename(columns={'value': 'Value'})
 
     stat['Place'] = stat['All'].rank(method='min', ascending=False).fillna(0).astype(int)
-    stat=stat.sort_values(by = 'All', ascending = False)
     stat.to_sql('stat', con=con, if_exists='replace')
     with pd.option_context('display.max_rows', None, 'display.max_columns', None):
         print(stat)
@@ -408,7 +408,7 @@ def init_transfers(GW):
         json = r.json()
         if len(json) != 0:
             temp = pd.DataFrame(json)[['element_in', 'element_out', 'event']]
-            temp = temp[temp['event'] == 5]
+            temp = temp[temp['event'] == GW]
             temp['manager'] = gracze['nazwa'][i]
             temp['element_in'] = temp.element_in.map(el_df.set_index('id').web_name)
             temp['element_out'] = temp.element_out.map(el_df.set_index('id').web_name)
@@ -657,7 +657,7 @@ while OK:
             print(cap_df)
 
     elif wybor == '12':
-        GW = input("Pick GW: ")
+        GW = int(input("Pick GW: "))
         init_transfers(GW)
 
     elif wybor == '13':
