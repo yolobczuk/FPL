@@ -103,7 +103,7 @@ def init_gracze():
         else:
             print("Y/N")
 
-    print("GRACZE W LIDZE:")
+    print("MANAGERS IN THE LEAGUE:")
     cur.execute("SELECT * FROM gracze")
     rows = cur.fetchall()
     for row in rows:
@@ -131,13 +131,13 @@ def init_pilkarzyki(GW):
     print(chk)
     potw = True
     while potw:
-        potw_inp = input("Zatwierdzasz zmiany? Y/N ")
+        potw_inp = input("Do you accept changes? Y/N ")
         if potw_inp == "Y":
-            print("Zmiany zatwierdzone")
+            print("Changes accepted")
             potw = False
         elif potw_inp == "N":
             cur.execute("DELETE FROM pilkarzyki WHERE gw = ?", (GW))
-            print("Zmiany odrzucone")
+            print("Changes rejected")
             potw = False
         else:
             print("Y/N")
@@ -198,7 +198,7 @@ def init_picks(GW):
     info_df = pd.DataFrame()
 
     for i in range(len(gracze['id'])):
-        print('Teraz sie zajmuje ' + str(gracze['nazwa'][i]))
+        print('Now processing ' + str(gracze['nazwa'][i]))
         r = requests.get(
             'https://fantasy.premierleague.com/api/entry/' + str(gracze['id'][i]) + '/event/' + str(GW) + '/picks/')
         json = r.json()
@@ -221,6 +221,15 @@ def init_picks(GW):
         cap_df = cap_df.append(temp.loc[temp['is_captain'] == True], ignore_index=True)
         vcap_df = vcap_df.append(temp.loc[temp['is_vice_captain'] == True], ignore_index=True)
         bench_df = bench_df.append(temp.loc[temp['multiplier'] == 0], ignore_index=True)
+        if json['active_chip']=='bboost':
+            temp['gw']=temp['gw']
+            temp['element']=json['active_chip']
+            temp['event_points']=0
+            temp['element_type']=json['active_chip']
+            temp['name'] = temp['name']
+            temp['team'] = json['active_chip']
+            temp['team_name'] = temp['team_name']
+            bench_df = bench_df.append(temp, ignore_index = True)
         info_df = info_df.append(temp)
 
     picks_df = picks_df[['gw', 'element', 'points', 'element_type', 'multiplier', 'name', 'team', 'team_name']]
@@ -234,121 +243,34 @@ def init_picks(GW):
     tablet['gw'] = GW
     tablev = pd.pivot_table(infov_df, values=['value'], index=['name', 'team_name'])
 
-    cur.execute("DELETE FROM all_picks WHERE gw = ?", (GW))
+    cur.execute("DELETE FROM all_picks WHERE gw = ?", (GW,))
     con.commit()
-    pok = True
-    while pok:
-        with pd.option_context('display.max_rows', 50, 'display.max_columns', 4):
-            print(all_picks_df)
-        potw = input("Tak wygladaja dane all_picks. Zaktualizowac? Y/N ")
-        if potw == "Y":
-            all_picks_df.to_sql('all_picks', con=con, if_exists='append', index=False)
-            print("Baza zostala zaaktualizowana")
-            pok = False
-        elif potw == "N":
-            print("Baza nie zostala zaaktualizowana")
-            pok = False
-        else:
-            print("Y/N")
-    cur.execute("DELETE FROM picked WHERE gw = ?", (GW))
+    all_picks_df.to_sql('all_picks', con=con, if_exists='append', index=False)
+    
+    cur.execute("DELETE FROM picked WHERE gw = ?", (GW,))
     con.commit()
-    pok = True
-    while pok:
-        with pd.option_context('display.max_rows', 50, 'display.max_columns', 4):
-            print(picks_df)
-        potw = input("Tak wygladaja dane picked. Zaktualizowac? Y/N ")
-        if potw == "Y":
-            picks_df.to_sql('picked', con=con, if_exists='append', index=False)
-            print("Baza zostala zaaktualizowana")
-            pok = False
-        elif potw == "N":
-            print("Baza nie zostala zaaktualizowana")
-            pok = False
-        else:
-            print("Y/N")
-    cur.execute("DELETE FROM captains WHERE gw = ?", (GW))
+    picks_df.to_sql('picked', con=con, if_exists='append', index=False)
+    
+    cur.execute("DELETE FROM captains WHERE gw = ?", (GW,))
     con.commit()
-    pok = True
-    while pok:
-        with pd.option_context('display.max_rows', 50, 'display.max_columns', 4):
-            print(cap_df)
-        potw = input("Tak wygladaja dane captains. Zaktualizowac? Y/N ")
-        if potw == "Y":
-            cap_df.to_sql('captains', con=con, if_exists='append', index=False)
-            print("Baza zostala zaaktualizowana")
-            pok = False
-        elif potw == "N":
-            print("Baza nie zostala zaaktualizowana")
-            pok = False
-        else:
-            print("Y/N")
-    cur.execute("DELETE FROM v_captains WHERE gw = ?", (GW))
-    con.commit()
-    pok = True
-    while pok:
-        with pd.option_context('display.max_rows', 50, 'display.max_columns', 4):
-            print(vcap_df)
-        potw = input("Tak wygladaja dane v_captains. Zaktualizowac? Y/N ")
-        if potw == "Y":
-            vcap_df.to_sql('v_captains', con=con, if_exists='append', index=False)
-            print("Baza zostala zaaktualizowana")
-            pok = False
-        elif potw == "N":
-            print("Baza nie zostala zaaktualizowana")
-            pok = False
-        else:
-            print("Y/N")
-    cur.execute("DELETE FROM bench WHERE gw = ?", (GW))
-    con.commit()
-    pok = True
-    while pok:
-        with pd.option_context('display.max_rows', 50, 'display.max_columns', 4):
-            print(bench_df)
-        potw = input("Tak wygladaja dane bench. Zaktualizowac? Y/N ")
-        if potw == "Y":
-            bench_df.to_sql('bench', con=con, if_exists='append', index=False)
-            print("Baza zostala zaaktualizowana")
-            pok = False
-        elif potw == "N":
-            print("Baza nie zostala zaaktualizowana")
-            pok = False
-        else:
-            print("Y/N")
+    cap_df.to_sql('captains', con=con, if_exists='append', index=False)
 
-    cur.execute("DELETE FROM transfers WHERE gw = " + str(GW))
+
+    cur.execute("DELETE FROM v_captains WHERE gw = ?", (GW,))
     con.commit()
-    pok = True
-    while pok:
-        with pd.option_context('display.max_rows', 50, 'display.max_columns', 4):
-            print(tablet)
-        potw = input("Tak wygladaja dane transfers. Zaktualizowac? Y/N ")
-        if potw == "Y":
-            tablet.to_sql('transfers', con=con, if_exists='append')
-            print("Baza zostala zaaktualizowana")
-            pok = False
-        elif potw == "N":
-            print("Baza nie zostala zaaktualizowana")
-            pok = False
-        else:
-            print("Y/N")
+    vcap_df.to_sql('v_captains', con=con, if_exists='append', index=False)
+
+    cur.execute("DELETE FROM bench WHERE gw = ?", (GW,))
+    bench_df.to_sql('bench', con=con, if_exists='append', index=False)
+    con.commit()
+
+    cur.execute("DELETE FROM transfers WHERE gw = " + str(GW,))
+    tablet.to_sql('transfers', con=con, if_exists='append')
+    con.commit()
 
     cur.execute("DELETE FROM value")
+    tablev.to_sql('value', con=con, if_exists='replace')
     con.commit()
-    pok = True
-    while pok:
-        with pd.option_context('display.max_rows', 50, 'display.max_columns', 4):
-            print(tablev)
-        potw = input("Tak wygladaja dane value. Zaktualizowac? Y/N ")
-        if potw == "Y":
-            tablev.to_sql('value', con=con, if_exists='replace')
-            print("Baza zostala zaaktualizowana")
-            pok = False
-        elif potw == "N":
-            print("Baza nie zostala zaaktualizowana")
-            pok = False
-        else:
-            print("Y/N")
-    print("PICKS UPDATED")
 
 
 def init_stat():
@@ -560,40 +482,132 @@ OK = True
 
 while OK:
     print("MAIN MENU")
-    print("1. Update managers")
-    print("2. Initialise players")
-    print("3. Initialise databases")
-    print("4. Initialise picks")
+    print("1. Start of the gameweek procedure")
+    print("2. End of the gameweek procedure")
+    print("3. Export data")
+    print("4. Show count of picked players (overall and GW)")
     print("5. Show all-season statistics")
-    print("6. Show players database")
-    print("7. Search for a player")
-    print("8. Overwrite players")
-    print("9. Show picks database")
-    print("10. Show GW count of picked players")
-    print("11. Show captains")
-    print("12. Show transfers")
-    print("13. Show GW statistics")
-    print("14. Export picks to CSV file")
-    print("15. Show all-season count of picked players")
-    print("16. Export captains to CSV file")
-    print("17. Show predictions")
-    print("18. Show plots")
-    print("19. Show point means")
+    print("6. Show GW statistics")
+    print("7. Show point means")    
+    print("8. Show transfers")
+    print("9. Search for a player")
+    print("10. Show captains")
+    print("11. Show plots")
+    print("12. Show predictions (WIP)")
+    print("13. Initialise picks") 
+    print("14. Overwrite players")
+    print("15. Show picks database")
+    print("16. Show players database")
+    print("17. Initialise players")
+    print("18. Update managers")
+    print("19. Initialise databases")
     print("0. Exit")
     wybor = input("Pick a number: ")
+
     if wybor == '1':
-        pok = True
-        while pok:
-            potw = input("This function overwrites manager info in database. Do you want to continue? Y/N ")
-            if potw == "Y":
-                init_gracze()
-                pok = False
-            elif potw == "N":
-                print("Database not updated")
-                pok = False
+        GW = input("Pick GW: ")
+        init_pilkarzyki(GW)
+        init_picks(GW)
+        cap_df = pd.read_sql("SELECT element, name FROM captains WHERE gw = " + str(GW), con)
+        with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+            print(cap_df)   
+        
+    elif wybor == '2':
+        GW = input("Pick GW: ")
+        overwrite_pilkarzyki(GW)
+        init_picks(GW)
+    
+    elif wybor == '3':
+        wr = pd.read_sql("SELECT * FROM picked", con)
+        save = input("Save to CSV file? Y/N ")
+        ok = True
+        while ok:
+            if save == 'Y':
+                wr.to_csv('gracz.csv', index=False, encoding='utf-8-sig')
+                ok = False
+            elif save == 'N':
+                ok = False
             else:
                 print("Y/N")
-    elif wybor == '2':
+                
+        wr = pd.read_sql("SELECT * FROM captains", con)
+        save = input("Save to CSV file? Y/N ")
+        ok = True
+        while ok:
+            if save == 'Y':
+                wr.to_csv('kapitanowie.csv', index=False, encoding='utf-8-sig')
+                ok = False
+            elif save == 'N':
+                ok = False
+            else:
+                print("Y/N")
+            
+    elif wybor == '4':
+        GW = input("Pick GW: ")
+        picks_df = pd.read_sql("SELECT * FROM picked WHERE gw = " + str(GW), con)
+        with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+            print(picks_df['element'].value_counts())
+        
+        sh = pd.read_sql("SELECT element, count(*) as ile FROM picked GROUP BY element ORDER BY ile desc", con)
+        with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+            print(sh)
+        sh = pd.read_sql("SELECT team, count(*) as ile FROM picked GROUP BY team ORDER BY ile desc", con)
+        with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+            print(sh)
+        
+
+    elif wybor == '5':
+        init_stat()
+
+    elif wybor == '6':
+        GW = input("Pick GW: ")
+        init_gw_stat(GW)
+
+    elif wybor == '7':
+        show_means()
+
+    elif wybor == '8':
+        GW = int(input("Pick GW: "))
+        init_transfers(GW)
+
+    elif wybor == '9':
+        GW = input("Pick GW: ")
+        all_picks_df = pd.read_sql("SELECT element, name FROM all_picks WHERE gw = " + str(GW), con)
+        szuk = input("WHO ARE YOU LOOKING FOR? ")
+        with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+            print(all_picks_df[(all_picks_df['element'] == str(szuk))])
+
+    elif wybor == '10':
+        GW = input("Pick GW: ")
+        cap_df = pd.read_sql("SELECT element, name FROM captains WHERE gw = " + str(GW), con)
+        with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+            print(cap_df)
+
+    elif wybor == '11':
+        GW = int(input("Pick GW: "))
+        show_plots(GW)   
+
+    elif wybor == '12':
+        GW = int(input("Pick GW: "))
+        init_pred(GW)
+
+    elif wybor == '13':
+        GW = input("Pick GW: ")
+        init_picks(GW)
+
+    elif wybor == '14':
+        GW = input("Pick GW: ")
+        overwrite_pilkarzyki(GW)
+        show_pilkarzyki(GW)
+
+    elif wybor == '15':
+        show_picks()
+            
+    elif wybor == '16':
+        GW = input("Pick GW: ")
+        show_pilkarzyki(GW)
+    
+    elif wybor == '17':
         pok = True
         GW = input("Pick GW: ")
         while pok:
@@ -606,7 +620,21 @@ while OK:
                 pok = False
             else:
                 print("Y/N")
-    elif wybor == '3':
+
+    elif wybor == '18':
+        pok = True
+        while pok:
+            potw = input("This function overwrites manager info in database. Do you want to continue? Y/N ")
+            if potw == "Y":
+                init_gracze()
+                pok = False
+            elif potw == "N":
+                print("Database not updated")
+                pok = False
+            else:
+                print("Y/N")
+    
+    elif wybor == '19':
         pok = True
         while pok:
             potw = input("This function overwrites databases. Do you want to continue? Y/N (NOT RECOMMENDED)")
@@ -618,96 +646,6 @@ while OK:
                 pok = False
             else:
                 print("Y/N")
-    elif wybor == '4':
-        GW = input("Pick GW: ")
-        init_picks(GW)
-
-    elif wybor == '5':
-        init_stat()
-
-    elif wybor == '6':
-        GW = input("Pick GW: ")
-        show_pilkarzyki(GW)
-
-    elif wybor == '7':
-        GW = input("Pick GW: ")
-        all_picks_df = pd.read_sql("SELECT element, name FROM all_picks WHERE gw = " + str(GW), con)
-        szuk = input("WHO ARE YOU LOOKING FOR? ")
-        with pd.option_context('display.max_rows', None, 'display.max_columns', None):
-            print(all_picks_df[(all_picks_df['element'] == str(szuk))])
-
-    elif wybor == '8':
-        GW = input("Pick GW: ")
-        overwrite_pilkarzyki(GW)
-        show_pilkarzyki(GW)
-
-    elif wybor == '9':
-        show_picks()
-
-    elif wybor == '10':
-        GW = input("Pick GW: ")
-        picks_df = pd.read_sql("SELECT * FROM picked WHERE gw = " + str(GW), con)
-        with pd.option_context('display.max_rows', None, 'display.max_columns', None):
-            print(picks_df['element'].value_counts())
-
-    elif wybor == '11':
-        GW = input("Pick GW: ")
-        cap_df = pd.read_sql("SELECT element, name FROM captains WHERE gw = " + str(GW), con)
-        with pd.option_context('display.max_rows', None, 'display.max_columns', None):
-            print(cap_df)
-
-    elif wybor == '12':
-        GW = int(input("Pick GW: "))
-        init_transfers(GW)
-
-    elif wybor == '13':
-        GW = input("Pick GW: ")
-        init_gw_stat(GW)
-
-    elif wybor == '14':
-        wr = pd.read_sql("SELECT * FROM picked", con)
-        save = input("Save to CSV file? Y/N ")
-        ok = True
-        while ok:
-            if save == 'Y':
-                wr.to_csv('gracz.csv', index=False, encoding='utf-8-sig')
-                ok = False
-            elif save == 'N':
-                ok = False
-            else:
-                print("Y/N")
-
-    elif wybor == '15':
-        sh = pd.read_sql("SELECT element, count(*) as ile FROM picked GROUP BY element ORDER BY ile desc", con)
-        with pd.option_context('display.max_rows', None, 'display.max_columns', None):
-            print(sh)
-        sh = pd.read_sql("SELECT team, count(*) as ile FROM picked GROUP BY team ORDER BY ile desc", con)
-        with pd.option_context('display.max_rows', None, 'display.max_columns', None):
-            print(sh)
-            
-    elif wybor == '16':
-        wr = pd.read_sql("SELECT * FROM captains", con)
-        save = input("Save to CSV file? Y/N ")
-        ok = True
-        while ok:
-            if save == 'Y':
-                wr.to_csv('kapitanowie.csv', index=False, encoding='utf-8-sig')
-                ok = False
-            elif save == 'N':
-                ok = False
-            else:
-                print("Y/N")
-    
-    elif wybor == '17':
-        GW = int(input("Pick GW: "))
-        init_pred(GW)
-
-    elif wybor == '18':
-        GW = int(input("Pick GW: "))
-        show_plots(GW)   
-
-    elif wybor == '19':
-        show_means()       
 
     #elif wybor == 'D':
         #cur.execute('DROP TABLE IF EXISTS all_picks;')
@@ -719,5 +657,7 @@ while OK:
     elif wybor == '0':
         print("EXIT")
         OK = False
+        
     else:
         print("Wrong number")
+    
