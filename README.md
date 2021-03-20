@@ -10,7 +10,7 @@ Skrypt napisany w języku Python zbierający informacje na temat mini-ligi w grz
 
 ### Użyte biblioteki 
 
-• pandas do obsługi data.frame i operacji na nich,
+• pandas do obsługi data frame i operacji na nich,
 
 • sqlite3 do tworzenia zapytań SQL w Pythonie,
 
